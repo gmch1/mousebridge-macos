@@ -68,6 +68,8 @@ button/two-DPI fields. Corrupt files are preserved as
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set back cmd+r
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set scroll-lines 4
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set dpi 1200
+/Applications/MouseBridge.app/Contents/MacOS/MouseBridge launch-at-login status
+/Applications/MouseBridge.app/Contents/MacOS/MouseBridge launch-at-login enable
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge diagnose
 ```
 

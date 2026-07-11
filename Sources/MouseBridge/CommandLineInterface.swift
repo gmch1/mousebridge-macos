@@ -1,6 +1,5 @@
 import ApplicationServices
 import Foundation
-import ServiceManagement
 
 @MainActor
 enum CommandLineInterface {
@@ -8,17 +7,41 @@ enum CommandLineInterface {
         guard let command = arguments.first else { return nil }
         switch command {
         case "config": return runConfig(Array(arguments.dropFirst()))
+        case "launch-at-login": return runLaunchAtLogin(Array(arguments.dropFirst()))
         case "diagnose":
             print("config=\(ConfigStore.shared.fileURL.path)")
             print("log=\(DiagnosticLog.shared.fileURL.path)")
             print("accessibility=\(AXIsProcessTrusted())")
             print("input-monitoring=\(CGPreflightListenEventAccess())")
-            print("launch-at-login=\(launchStatusDescription)")
+            print("launch-at-login=\(LaunchAtLoginController.status.description)")
             return 0
         case "help", "--help", "-h":
             printHelp()
             return 0
         default: return nil
+        }
+    }
+
+    private static func runLaunchAtLogin(_ arguments: [String]) -> Int {
+        guard arguments.count == 1 else {
+            return fail("用法：MouseBridge launch-at-login status|enable|disable", code: 2)
+        }
+        do {
+            switch arguments[0] {
+            case "status":
+                print(LaunchAtLoginController.status.description)
+            case "enable":
+                try LaunchAtLoginController.setEnabled(true)
+                print(LaunchAtLoginController.status.description)
+            case "disable":
+                try LaunchAtLoginController.setEnabled(false)
+                print(LaunchAtLoginController.status.description)
+            default:
+                return fail("未知 launch-at-login 操作：\(arguments[0])", code: 2)
+            }
+            return 0
+        } catch {
+            return fail("登录启动设置失败：\(error.localizedDescription)")
         }
     }
 
@@ -88,16 +111,6 @@ enum CommandLineInterface {
         }
     }
 
-    private static var launchStatusDescription: String {
-        switch SMAppService.mainApp.status {
-        case .enabled: return "enabled"
-        case .requiresApproval: return "requires-approval"
-        case .notRegistered: return "not-registered"
-        case .notFound: return "not-found"
-        @unknown default: return "unknown"
-        }
-    }
-
     private static func fail(_ message: String, code: Int = 1) -> Int {
         FileHandle.standardError.write(Data("MouseBridge: \(message)\n".utf8))
         return code
@@ -112,6 +125,7 @@ enum CommandLineInterface {
           MouseBridge config set reverse-vertical|reverse-horizontal <true|false>
           MouseBridge config set scroll-lines <0-20>
           MouseBridge config set dpi <400-4000>
+          MouseBridge launch-at-login status|enable|disable
           MouseBridge diagnose
         """)
     }

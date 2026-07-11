@@ -1,5 +1,4 @@
 import AppKit
-import ServiceManagement
 
 @MainActor
 final class SettingsWindowController: NSWindowController {
@@ -162,11 +161,7 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func toggleLaunchAtLogin() {
         do {
-            if launchAtLogin.state == .on {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
+            try LaunchAtLoginController.setEnabled(launchAtLogin.state == .on)
             refreshLaunchAtLogin()
         } catch {
             refreshLaunchAtLogin()
@@ -176,12 +171,23 @@ final class SettingsWindowController: NSWindowController {
     }
 
     private func refreshLaunchAtLogin() {
-        launchAtLogin.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        if SMAppService.mainApp.status == .requiresApproval {
+        switch LaunchAtLoginController.status {
+        case .enabled:
+            launchAtLogin.isEnabled = true
+            launchAtLogin.state = .on
+            launchAtLogin.title = "登录时自动启动"
+        case .requiresApproval:
+            launchAtLogin.isEnabled = true
             launchAtLogin.state = .on
             launchAtLogin.title = "登录时自动启动（等待系统批准）"
-        } else {
+        case .disabled:
+            launchAtLogin.isEnabled = true
+            launchAtLogin.state = .off
             launchAtLogin.title = "登录时自动启动"
+        case .unavailable:
+            launchAtLogin.isEnabled = false
+            launchAtLogin.state = .off
+            launchAtLogin.title = "登录时自动启动（当前系统不可用）"
         }
     }
 
