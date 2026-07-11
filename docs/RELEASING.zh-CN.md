@@ -11,8 +11,8 @@
 Pre-release：
 
 ```bash
-git tag -a v0.2.0 -m "MouseBridge v0.2.0"
-git push origin v0.2.0
+git tag -a v0.2.1 -m "MouseBridge v0.2.1"
+git push origin v0.2.1
 ```
 
 ## 签名并公证的正式版本
@@ -31,3 +31,6 @@ git push origin v0.2.0
 
 每个版本包含应用 ZIP 和 SHA-256 校验文件。版本校验、测试、签名、公证或打包任一步骤
 失败时，Release 都不会创建。
+
+应用 ZIP 还必须包含 GPL-3.0、上游许可证与 NOTICE、版权信息和对应源码获取方式。
+GitHub 会在同一 tag 的二进制文件旁提供自动生成的源码归档。

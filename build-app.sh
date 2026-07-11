@@ -4,7 +4,7 @@ set -eu
 ROOT=${0:A:h}
 APP="$ROOT/dist/MouseBridge.app"
 CONTENTS="$APP/Contents"
-VERSION=${VERSION:-0.2.0}
+VERSION=${VERSION:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT/Info.plist")}
 BUILD_NUMBER=${BUILD_NUMBER:-1}
 SIGN_IDENTITY=${SIGN_IDENTITY:--}
 export SWIFTPM_MODULECACHE_OVERRIDE="$ROOT/.module-cache"
@@ -24,9 +24,16 @@ fi
 "$SWIFT_BIN" build -c release --disable-sandbox --package-path "$ROOT"
 "$ROOT/.build/release/MouseBridge" --self-test
 rm -rf "$APP"
-mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
+mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources/Legal"
 cp "$ROOT/.build/release/MouseBridge" "$CONTENTS/MacOS/MouseBridge"
 cp "$ROOT/Info.plist" "$CONTENTS/Info.plist"
+cp "$ROOT/LICENSE" "$CONTENTS/Resources/Legal/GPL-3.0.txt"
+cp "$ROOT/COPYRIGHT" "$CONTENTS/Resources/Legal/COPYRIGHT"
+cp "$ROOT/THIRD_PARTY_NOTICES.md" "$CONTENTS/Resources/Legal/THIRD_PARTY_NOTICES.md"
+cp "$ROOT/SOURCE.md" "$CONTENTS/Resources/Legal/SOURCE.md"
+cp "$ROOT/LICENSES/Apache-2.0.txt" "$CONTENTS/Resources/Legal/Apache-2.0.txt"
+cp "$ROOT/LICENSES/GPL-2.0.txt" "$CONTENTS/Resources/Legal/GPL-2.0.txt"
+cp "$ROOT/LICENSES/Scroll-Reverser-NOTICE.txt" "$CONTENTS/Resources/Legal/Scroll-Reverser-NOTICE.txt"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$CONTENTS/Info.plist"
 

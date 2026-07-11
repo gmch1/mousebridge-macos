@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// HID++ adjustable-DPI list decoding is adapted from Solaar,
+// Copyright 2012-2013 Daniel Pavel and Solaar contributors,
+// originally licensed under GPL-2.0-or-later. See LICENSES/.
+// Modified and reimplemented for MouseBridge in 2026.
+
 import Foundation
 import IOKit.hid
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import AppKit
 
 if CommandLine.arguments.contains("--self-test") {

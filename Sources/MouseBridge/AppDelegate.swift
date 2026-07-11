@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import AppKit
 import ApplicationServices
 
@@ -165,6 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         toggleItem = NSMenuItem(title: "暂停映射", action: #selector(toggleEnabled), keyEquivalent: "")
         menu.addItem(toggleItem)
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "关于 MouseBridge…", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "退出 MouseBridge", action: #selector(quit), keyEquivalent: "q"))
         for item in menu.items where item.action != nil { item.target = self }
         statusItem.menu = menu
@@ -178,6 +181,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleEnabled() {
         isEnabled.toggle()
         toggleItem.title = isEnabled ? "暂停映射" : "恢复映射"
+    }
+
+    @objc private func showAbout() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let alert = NSAlert()
+        alert.messageText = "MouseBridge \(version)"
+        alert.informativeText = """
+        Copyright © 2026 guomingchao 与 MouseBridge 贡献者
+
+        本程序是使用 GPL-3.0-or-later 分发的自由软件，不提供任何担保。你可以依照许可证复制、修改和再分发。完整许可证与第三方声明位于应用包 Contents/Resources/Legal，源码可从 GitHub 免费获取。
+        """
+        alert.addButton(withTitle: "好")
+        alert.addButton(withTitle: "查看源码")
+        if alert.runModal() == .alertSecondButtonReturn,
+           let url = URL(string: "https://github.com/gmch1/mousebridge-macos") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @objc private func quit() {

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Scroll-event handling includes adaptations informed by Scroll Reverser,
+// Copyright 2011 Nicholas Moore, licensed under Apache-2.0. See LICENSES/.
+// Modified and reimplemented for MouseBridge in 2026.
+
 import ApplicationServices
 import AppKit
 import Darwin

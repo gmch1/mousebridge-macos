@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 — 2026-07-12
+
+- Relicense the combined project under GPL-3.0-or-later.
+- Record Scroll Reverser and Solaar provenance without absolute non-copying claims.
+- Bundle GPL, Apache, upstream NOTICE, and corresponding-source information in the app.
+
 ## 0.2.0 — 2026-07-12
 
 First public preview of MouseBridge.

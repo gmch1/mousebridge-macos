@@ -11,8 +11,8 @@ Without Apple signing secrets, the workflow builds an ad-hoc signed archive and
 publishes it as a GitHub pre-release:
 
 ```bash
-git tag -a v0.2.0 -m "MouseBridge v0.2.0"
-git push origin v0.2.0
+git tag -a v0.2.1 -m "MouseBridge v0.2.1"
+git push origin v0.2.1
 ```
 
 ## Signed and notarized release
@@ -33,3 +33,6 @@ publishes a normal GitHub Release.
 
 Every release contains the app ZIP and a SHA-256 checksum. If any validation,
 test, signature, notarization, or packaging step fails, no Release is created.
+The app ZIP also contains GPL-3.0, upstream license and NOTICE files, copyright
+information, and directions to the corresponding source. GitHub's generated
+source archives for the same tag provide that source alongside the binary.

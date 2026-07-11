@@ -141,8 +141,10 @@ jobs:
             print
             print 'Verify the download with the attached `.sha256` file.'
             print
+            print 'License: GPL-3.0-or-later. Corresponding source is available from the source archives attached to this Release.'
+            print
             print '### Changes'
-            sed -n '5,$p' CHANGELOG.md
+            sed -n "/^## $RELEASE_VERSION /,/^## /p" CHANGELOG.md | sed '$d'
           } > "$notes"
 
           prerelease=()

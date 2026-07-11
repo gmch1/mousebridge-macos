@@ -2,10 +2,10 @@
 
 English | [简体中文](README.zh-CN.md)
 
-MouseBridge is a small native macOS foundation for mouse button mapping,
-mouse-only wheel control, and Logitech HID++ hardware DPI configuration. It was
-created for people who only need a few mouse features and do not want to keep a
-large vendor suite running in the background.
+MouseBridge is a GPL-3.0-or-later native macOS foundation for mouse button
+mapping, mouse-only wheel control, and Logitech HID++ hardware DPI
+configuration. It was created for people who only need a few mouse features
+and do not want to keep a large vendor suite running in the background.
 
 The project deliberately exposes useful low-level capabilities through a small
 AppKit UI, a versioned JSON file, and a CLI. This makes it practical for users,
@@ -101,13 +101,13 @@ For a Developer ID build:
 
 ```bash
 SIGN_IDENTITY="Developer ID Application: Example (TEAMID)" \
-VERSION=0.2.0 BUILD_NUMBER=2 zsh build-app.sh
+VERSION=0.2.1 BUILD_NUMBER=2 zsh build-app.sh
 NOTARY_PROFILE=mousebridge-notary zsh scripts/notarize.sh
 ```
 
 ## Release maintenance
 
-Pushing a semantic version tag such as `v0.2.0` verifies that the tag matches
+Pushing a semantic version tag such as `v0.2.1` verifies that the tag matches
 `Info.plist`, runs all tests, builds the app, creates a ZIP and SHA-256 checksum,
 and publishes a GitHub Release. Without Apple signing secrets, the workflow
 publishes an explicitly labeled pre-release.
@@ -151,22 +151,21 @@ external changes automatically.
 Adding a device begins with `MouseDeviceProfile`; the transport layer does not
 need to know the product's marketing name.
 
-## Open-source references
+## Open-source foundations
 
-MouseBridge is an independent MIT-licensed implementation. Interoperability
-work was informed by:
+MouseBridge builds on interoperability knowledge and implementation patterns
+from:
 
 - [Scroll Reverser](https://github.com/pilotmoon/Scroll-Reverser) (Apache-2.0):
   its public implementation helped explain trackpad/mouse gesture timing and
   why reliable reversal updates both Quartz and the underlying IOHID scroll
   payload.
-- [Solaar](https://github.com/pwr-Solaar/Solaar) (GPL-2.0): its public source
-  was consulted as protocol documentation for Logitech HID++ adjustable-DPI
-  list encoding.
+- [Solaar](https://github.com/pwr-Solaar/Solaar) (GPL-2.0-or-later): its HID++
+  adjustable-DPI list decoding informed the corresponding MouseBridge logic.
 
-MouseBridge does not include or link code from either project. See
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for exact acknowledgements and
-license links.
+The combined MouseBridge work is distributed under GPL-3.0-or-later. Original
+third-party portions retain their notices and license history. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSES](LICENSES/).
 
 ## Compatibility and distribution note
 
@@ -179,4 +178,6 @@ Mac App Store.
 
 ## License
 
-MouseBridge is available under the MIT License.
+MouseBridge is free software distributed under
+[GPL-3.0-or-later](LICENSE). Corresponding source is available in this
+repository and with each GitHub Release. See [SOURCE.md](SOURCE.md).
