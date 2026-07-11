@@ -57,7 +57,7 @@ The first and currently only hardware profile tested on a physical device is:
 
 Physical-device verification currently covers Bluetooth discovery, back and
 forward button mapping, vertical scroll reversal, and reading/applying hardware
-DPI. Scroll calculations, configuration migration, shortcut validation, and
+DPI. Scroll calculations, configuration validation, shortcut validation, and
 DPI decoding also have automated tests.
 
 The following paths are implemented but have not yet received the same physical
@@ -82,21 +82,20 @@ The settings window links directly to the relevant System Settings panes.
 Download the ZIP from [GitHub Releases](https://github.com/gmch1/mousebridge-macos/releases),
 extract it, and move `MouseBridge.app` to `/Applications`.
 
-The current 0.2.0 preview is ad-hoc signed because the repository does not yet
-have Apple Developer ID credentials. Gatekeeper may therefore require manual
-approval. A release built with the documented Apple secrets is automatically
-Developer ID signed and notarized.
+Releases labeled **Pre-release** are ad-hoc signed and may require manual
+Gatekeeper approval. Developer ID signed and notarized builds are published as
+regular releases.
 
-## Build and test
+## Development (contributors)
 
 ```bash
 zsh build-app.sh
 open dist/MouseBridge.app
 ```
 
-The script uses `/Applications/Xcode.app` when available, runs XCTest and the
-binary self-test, builds a release executable, assembles the app bundle, and
-applies a development ad-hoc signature.
+The build script uses `/Applications/Xcode.app` when available, runs XCTest and
+the binary self-test, builds a release executable, and assembles the app bundle.
+Its default ad-hoc signature is intended only for local contributor builds.
 
 For a Developer ID build:
 
@@ -106,7 +105,7 @@ VERSION=0.2.0 BUILD_NUMBER=2 zsh build-app.sh
 NOTARY_PROFILE=mousebridge-notary zsh scripts/notarize.sh
 ```
 
-## Releases
+## Release maintenance
 
 Pushing a semantic version tag such as `v0.2.0` verifies that the tag matches
 `Info.plist`, runs all tests, builds the app, creates a ZIP and SHA-256 checksum,
@@ -123,9 +122,6 @@ Configuration is stored at:
 ~/Library/Application Support/MouseBridge/config.json
 ```
 
-Legacy `LogiLite/config.json` is migrated once. Corrupt files are preserved as
-`config.corrupt-<timestamp>.json` instead of being overwritten.
-
 ```bash
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config get
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set back cmd+r
@@ -141,7 +137,7 @@ external changes automatically.
 
 ## Architecture and extension points
 
-- `AppConfig` and `ConfigStore`: versioned JSON, migration, atomic writes, and
+- `AppConfig` and `ConfigStore`: versioned JSON, validation, atomic writes, and
   directory watching.
 - `EventTapController`: button interception, source classification, and wheel
   transformation.
