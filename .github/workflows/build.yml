@@ -1,0 +1,15 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test and build app
+        run: zsh build-app.sh
+      - name: Verify app signature
+        run: codesign --verify --deep --strict dist/MouseBridge.app

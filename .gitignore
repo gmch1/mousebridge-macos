@@ -1,0 +1,8 @@
+.build/
+.module-cache/
+.module-cache-xcode/
+dist/
+.DS_Store
+*.xcuserstate
+DerivedData/
+(A Document Being Saved By swift-test*)/
