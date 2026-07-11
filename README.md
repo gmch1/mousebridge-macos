@@ -51,6 +51,16 @@ NOTARY_PROFILE=mousebridge-notary zsh scripts/notarize.sh
 The ad-hoc signature is for local development only. GitHub releases should be
 Developer ID signed, hardened, timestamped, and notarized.
 
+## Releases
+
+Pushing a version tag such as `v0.2.0` runs the release workflow, verifies that
+the tag matches `Info.plist`, runs the test suite, builds the app, creates a ZIP
+and SHA-256 checksum, and publishes a GitHub Release. Without configured Apple
+signing secrets, the same workflow publishes an explicitly labeled pre-release.
+
+See [docs/RELEASING.md](docs/RELEASING.md) for signing secret names and the
+release procedure.
+
 ## Configuration and CLI
 
 Configuration is stored at:
