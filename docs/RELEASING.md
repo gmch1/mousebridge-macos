@@ -1,5 +1,7 @@
 # Releasing MouseBridge
 
+English | [简体中文](RELEASING.zh-CN.md)
+
 The release workflow is triggered by a semantic version tag. The tag must match
 `CFBundleShortVersionString` in `Info.plist`.
 
