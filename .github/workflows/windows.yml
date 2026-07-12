@@ -1,0 +1,58 @@
+name: windows
+
+on:
+  push:
+    branches: [windows]
+    paths:
+      - "platforms/windows/**"
+      - "shared/**"
+      - ".github/workflows/windows.yml"
+      - "LICENSE"
+      - "LICENSES/**"
+      - "COPYRIGHT"
+      - "THIRD_PARTY_NOTICES.md"
+      - "SOURCE.md"
+  pull_request:
+    paths:
+      - "platforms/windows/**"
+      - "shared/**"
+      - ".github/workflows/windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-win-x64:
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      PROJECT: platforms/windows/MouseBridge/MouseBridge.csproj
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore $env:PROJECT
+      - name: Build without warnings
+        run: dotnet build $env:PROJECT -c Release --no-restore --warnaserror
+      - name: Built-in unit and protocol self-test
+        run: '& platforms/windows/MouseBridge/bin/Release/net8.0-windows/MouseBridge.exe --self-test'
+      - name: Publish framework-dependent win-x64
+        run: dotnet publish $env:PROJECT -c Release -r win-x64 --self-contained false -o platforms/windows/out/publish
+      - name: Verify published executable
+        run: '& platforms/windows/out/publish/MouseBridge.exe --self-test'
+      - name: Package preview and SHA-256
+        run: >-
+          ./platforms/windows/scripts/package.ps1
+          -PublishDirectory platforms/windows/out/publish
+          -OutputDirectory platforms/windows/out/package
+          -Commit $env:GITHUB_SHA
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MouseBridge-v0.1.0-preview-win-x64
+          if-no-files-found: error
+          path: |
+            platforms/windows/out/package/MouseBridge-v0.1.0-preview-win-x64.zip
+            platforms/windows/out/package/MouseBridge-v0.1.0-preview-win-x64.zip.sha256

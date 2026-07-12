@@ -2,6 +2,9 @@
 .module-cache/
 .module-cache-xcode/
 dist/
+**/bin/
+**/obj/
+platforms/windows/out/
 .DS_Store
 *.xcuserstate
 DerivedData/

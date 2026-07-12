@@ -12,6 +12,12 @@ AppKit UI, a versioned JSON file, and a CLI. This makes it practical for users,
 scripts, and coding agents such as Codex to extend without first replacing a
 large framework.
 
+An early Windows implementation now lives in
+[`platforms/windows`](platforms/windows/README.md). It is versioned
+`0.1.0-preview`: the project and self-tests are buildable, but Logitech M750 L
+hardware has not yet been physically verified on Windows. The macOS tested
+hardware claims below do not apply to that preview.
+
 [Download the latest release](https://github.com/gmch1/mousebridge-macos/releases)
 
 ## Project goals
