@@ -4,7 +4,7 @@ import Darwin
 import Foundation
 
 struct AppConfig: Codable, Equatable, Sendable {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
 
     var schemaVersion = Self.currentSchemaVersion
     var middleAction = ""
@@ -14,6 +14,13 @@ struct AppConfig: Codable, Equatable, Sendable {
     var reverseHorizontalScroll = false
     var scrollLines = 0
     var primaryDPI = 1000
+    var trackpadGestureEnabled = false
+    var trackpadFingerCount = 3
+    var trackpadAction = "cmd+w"
+    var trackpadTapEnabled = false
+    var trackpadAllowMoreFingers = false
+    var trackpadTapMaxMilliseconds = 300
+    var trackpadTapMaxMovement = 0.05
 
     init(
         middleAction: String = "",
@@ -22,7 +29,14 @@ struct AppConfig: Codable, Equatable, Sendable {
         reverseVerticalScroll: Bool = false,
         reverseHorizontalScroll: Bool = false,
         scrollLines: Int = 0,
-        primaryDPI: Int = 1000
+        primaryDPI: Int = 1000,
+        trackpadGestureEnabled: Bool = false,
+        trackpadFingerCount: Int = 3,
+        trackpadAction: String = "cmd+w",
+        trackpadTapEnabled: Bool = false,
+        trackpadAllowMoreFingers: Bool = false,
+        trackpadTapMaxMilliseconds: Int = 300,
+        trackpadTapMaxMovement: Double = 0.05
     ) {
         self.middleAction = middleAction
         self.backAction = backAction
@@ -31,6 +45,13 @@ struct AppConfig: Codable, Equatable, Sendable {
         self.reverseHorizontalScroll = reverseHorizontalScroll
         self.scrollLines = scrollLines
         self.primaryDPI = primaryDPI
+        self.trackpadGestureEnabled = trackpadGestureEnabled
+        self.trackpadFingerCount = trackpadFingerCount
+        self.trackpadAction = trackpadAction
+        self.trackpadTapEnabled = trackpadTapEnabled
+        self.trackpadAllowMoreFingers = trackpadAllowMoreFingers
+        self.trackpadTapMaxMilliseconds = trackpadTapMaxMilliseconds
+        self.trackpadTapMaxMovement = trackpadTapMaxMovement
         normalize()
     }
 
@@ -38,9 +59,13 @@ struct AppConfig: Codable, Equatable, Sendable {
         schemaVersion = Self.currentSchemaVersion
         primaryDPI = Self.clampDPI(primaryDPI)
         scrollLines = min(20, max(0, scrollLines))
+        trackpadFingerCount = min(5, max(2, trackpadFingerCount))
+        trackpadTapMaxMilliseconds = min(1_000, max(50, trackpadTapMaxMilliseconds))
+        trackpadTapMaxMovement = min(0.5, max(0.001, trackpadTapMaxMovement))
         middleAction = Self.normalizeAction(middleAction)
         backAction = Self.normalizeAction(backAction)
         forwardAction = Self.normalizeAction(forwardAction)
+        trackpadAction = Self.normalizeAction(trackpadAction)
     }
 
     static func clampDPI(_ value: Int) -> Int { min(4000, max(400, value)) }
@@ -54,6 +79,9 @@ struct AppConfig: Codable, Equatable, Sendable {
         case middleAction, backAction, forwardAction
         case reverseVerticalScroll, reverseHorizontalScroll, scrollLines
         case primaryDPI
+        case trackpadGestureEnabled, trackpadFingerCount, trackpadAction
+        case trackpadTapEnabled, trackpadAllowMoreFingers
+        case trackpadTapMaxMilliseconds, trackpadTapMaxMovement
     }
 
     init(from decoder: Decoder) throws {
@@ -66,6 +94,13 @@ struct AppConfig: Codable, Equatable, Sendable {
         reverseHorizontalScroll = try values.decodeIfPresent(Bool.self, forKey: .reverseHorizontalScroll) ?? false
         scrollLines = try values.decodeIfPresent(Int.self, forKey: .scrollLines) ?? 0
         primaryDPI = try values.decodeIfPresent(Int.self, forKey: .primaryDPI) ?? 1000
+        trackpadGestureEnabled = try values.decodeIfPresent(Bool.self, forKey: .trackpadGestureEnabled) ?? false
+        trackpadFingerCount = try values.decodeIfPresent(Int.self, forKey: .trackpadFingerCount) ?? 3
+        trackpadAction = try values.decodeIfPresent(String.self, forKey: .trackpadAction) ?? "cmd+w"
+        trackpadTapEnabled = try values.decodeIfPresent(Bool.self, forKey: .trackpadTapEnabled) ?? false
+        trackpadAllowMoreFingers = try values.decodeIfPresent(Bool.self, forKey: .trackpadAllowMoreFingers) ?? false
+        trackpadTapMaxMilliseconds = try values.decodeIfPresent(Int.self, forKey: .trackpadTapMaxMilliseconds) ?? 300
+        trackpadTapMaxMovement = try values.decodeIfPresent(Double.self, forKey: .trackpadTapMaxMovement) ?? 0.05
         normalize()
     }
 
@@ -125,7 +160,7 @@ final class ConfigStore {
             }
             if FileManager.default.fileExists(atPath: fileURL.path) {
                 config = try Self.readConfig(at: fileURL)
-                // Rewrite successfully decoded legacy schemas in canonical v2
+                // Rewrite successfully decoded legacy schemas in canonical v3
                 // form so removed keys do not linger indefinitely.
                 try config.prettyJSONData().write(to: fileURL, options: .atomic)
             } else {

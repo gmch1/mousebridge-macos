@@ -131,7 +131,7 @@ jobs:
           {
             print "MouseBridge v$RELEASE_VERSION"
             print
-            print 'Native macOS button mapping, mouse-only scroll control, and Logitech M750 hardware DPI configuration.'
+            print 'Native macOS button mapping, trackpad multi-finger shortcuts, mouse-only scroll control, and Logitech M750 hardware DPI configuration.'
             print
             if [[ "$SIGNED" == "true" ]]; then
               print 'This build is Developer ID signed and notarized by Apple.'

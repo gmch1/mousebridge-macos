@@ -16,6 +16,7 @@ final class EventTapController {
     private var gestureSource: CFRunLoopSource?
     private var configProvider: () -> AppConfig
     private var enabledProvider: () -> Bool
+    private var trackpadClickHandler: () -> Bool
     private var lastTouchTime = -Double.greatestFiniteMagnitude
     private var touchingCount = 0
     private var lastScrollWasMouse = true
@@ -25,9 +26,14 @@ final class EventTapController {
     private var probeReceived = false
     var onActivity: ((Int, Int) -> Void)?
 
-    init(configProvider: @escaping () -> AppConfig, enabledProvider: @escaping () -> Bool) {
+    init(
+        configProvider: @escaping () -> AppConfig,
+        enabledProvider: @escaping () -> Bool,
+        trackpadClickHandler: @escaping () -> Bool = { false }
+    ) {
         self.configProvider = configProvider
         self.enabledProvider = enabledProvider
+        self.trackpadClickHandler = trackpadClickHandler
     }
 
     func start(monitorGestures: Bool) -> Bool {
@@ -38,6 +44,8 @@ final class EventTapController {
         }
         var mask = CGEventMask(1 << CGEventType.otherMouseDown.rawValue)
             | CGEventMask(1 << CGEventType.otherMouseUp.rawValue)
+            | CGEventMask(1 << CGEventType.leftMouseDown.rawValue)
+            | CGEventMask(1 << CGEventType.rightMouseDown.rawValue)
             | CGEventMask(1 << CGEventType.scrollWheel.rawValue)
         if DiagnosticLog.verboseEvents {
             mask |= CGEventMask(1 << CGEventType.keyDown.rawValue)
@@ -138,6 +146,15 @@ final class EventTapController {
         }
         guard enabledProvider() else { return Unmanaged.passUnretained(event) }
         let config = configProvider()
+
+        if type == .leftMouseDown || type == .rightMouseDown {
+            if trackpadClickHandler() {
+                DiagnosticLog.shared.writeEvent("trackpad physical click gesture triggered")
+            }
+            // Preserve the physical click. The configured shortcut is an
+            // additional action, matching TapBind's behavior.
+            return Unmanaged.passUnretained(event)
+        }
 
         if type.rawValue == UInt32(NSEvent.EventType.gesture.rawValue) {
             if let nsEvent = NSEvent(cgEvent: event) {

@@ -14,6 +14,11 @@ final class SettingsWindowController: NSWindowController {
     private let dpiSlider = NSSlider(value: 0, minValue: 0, maxValue: 100, target: nil, action: nil)
     private let dpiValue = NSTextField(labelWithString: "1000 DPI")
     private let dpiRange = NSTextField(labelWithString: "正在读取设备 DPI 范围…")
+    private let trackpadEnabled = NSButton(checkboxWithTitle: "启用触控板多指快捷键", target: nil, action: nil)
+    private let trackpadFingerPopup = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let trackpadActionField = NSTextField()
+    private let trackpadTapEnabled = NSButton(checkboxWithTitle: "轻点也触发（关闭时仅物理按压）", target: nil, action: nil)
+    private let trackpadAllowMoreFingers = NSButton(checkboxWithTitle: "允许多于设定手指数", target: nil, action: nil)
     private let connectionLabel = NSTextField(labelWithString: "M750：正在连接…")
     private let inputStatusLabel = NSTextField(labelWithString: "按键与滚轮：检查权限…")
     private let permissionStatusLabel = NSTextField(labelWithString: "权限：正在检查…")
@@ -23,7 +28,7 @@ final class SettingsWindowController: NSWindowController {
 
     init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 650),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 790),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -77,7 +82,7 @@ final class SettingsWindowController: NSWindowController {
         guard let content = window?.contentView else { return }
         let title = NSTextField(labelWithString: "MouseBridge")
         title.font = .systemFont(ofSize: 24, weight: .semibold)
-        let subtitle = NSTextField(labelWithString: "原生 macOS 鼠标按键、滚轮与硬件 DPI 工具")
+        let subtitle = NSTextField(labelWithString: "原生 macOS 鼠标、触控板多指快捷键与硬件 DPI 工具")
         subtitle.textColor = .secondaryLabelColor
 
         let grid = NSGridView(views: [
@@ -92,6 +97,26 @@ final class SettingsWindowController: NSWindowController {
         for field in [middleField, backField, forwardField] {
             field.placeholderString = "留空=透传，例如 cmd+r、shift+cmd+z、none"
         }
+
+        trackpadFingerPopup.addItems(withTitles: ["2 指", "3 指", "4 指", "5 指"])
+        for (index, item) in trackpadFingerPopup.itemArray.enumerated() { item.tag = index + 2 }
+        trackpadActionField.placeholderString = "例如 cmd+w、ctrl+left、none"
+        trackpadEnabled.target = self
+        trackpadEnabled.action = #selector(trackpadEnabledChanged)
+
+        let trackpadTitle = NSTextField(labelWithString: "触控板多指快捷键")
+        trackpadTitle.font = .systemFont(ofSize: 15, weight: .semibold)
+        let trackpadGrid = NSGridView(views: [
+            [NSTextField(labelWithString: "手指数"), trackpadFingerPopup],
+            [NSTextField(labelWithString: "触发快捷键"), trackpadActionField],
+        ])
+        trackpadGrid.rowSpacing = 10
+        trackpadGrid.columnSpacing = 14
+        trackpadGrid.column(at: 0).xPlacement = .trailing
+        trackpadGrid.column(at: 1).width = 330
+        let trackpadHelp = NSTextField(wrappingLabelWithString: "物理按压会保留原来的左/右键点击，并额外执行快捷键。轻点识别限制为 300 毫秒和较小移动距离，可在 JSON 中调整。")
+        trackpadHelp.textColor = .secondaryLabelColor
+        trackpadHelp.font = .systemFont(ofSize: 12)
 
         scrollLinesSlider.numberOfTickMarks = 21
         scrollLinesSlider.allowsTickMarkValuesOnly = true
@@ -128,6 +153,7 @@ final class SettingsWindowController: NSWindowController {
         let stack = NSStackView(views: [
             title, subtitle, connectionLabel, permissionStatusLabel, inputStatusLabel, permissionButtons,
             grid,
+            trackpadTitle, trackpadEnabled, trackpadGrid, trackpadTapEnabled, trackpadAllowMoreFingers, trackpadHelp,
             sliderRow(title: "滚动行数", slider: scrollLinesSlider, value: scrollLinesValue),
             reverseVertical, reverseHorizontal,
             sliderRow(title: "DPI", slider: dpiSlider, value: dpiValue),
@@ -144,6 +170,8 @@ final class SettingsWindowController: NSWindowController {
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 24),
             stack.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -24),
             grid.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            trackpadGrid.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            trackpadHelp.widthAnchor.constraint(equalTo: stack.widthAnchor),
             help.widthAnchor.constraint(equalTo: stack.widthAnchor),
         ])
     }
@@ -211,12 +239,18 @@ final class SettingsWindowController: NSWindowController {
         middleField.stringValue = config.middleAction
         backField.stringValue = config.backAction
         forwardField.stringValue = config.forwardAction
+        trackpadEnabled.state = config.trackpadGestureEnabled ? .on : .off
+        trackpadFingerPopup.selectItem(withTag: config.trackpadFingerCount)
+        trackpadActionField.stringValue = config.trackpadAction
+        trackpadTapEnabled.state = config.trackpadTapEnabled ? .on : .off
+        trackpadAllowMoreFingers.state = config.trackpadAllowMoreFingers ? .on : .off
         reverseVertical.state = config.reverseVerticalScroll ? .on : .off
         reverseHorizontal.state = config.reverseHorizontalScroll ? .on : .off
         scrollLinesSlider.integerValue = config.scrollLines
         dpiSlider.doubleValue = percent(forDPI: config.primaryDPI)
         updateScrollLinesValue()
         updateDPIValue()
+        updateTrackpadControls()
     }
 
     private func percent(forDPI dpi: Int) -> Double {
@@ -233,6 +267,14 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func scrollLinesChanged() { updateScrollLinesValue() }
     @objc private func dpiChanged() { updateDPIValue() }
+    @objc private func trackpadEnabledChanged() { updateTrackpadControls() }
+
+    private func updateTrackpadControls() {
+        let enabled = trackpadEnabled.state == .on
+        for control in [trackpadFingerPopup, trackpadActionField, trackpadTapEnabled, trackpadAllowMoreFingers] {
+            control.isEnabled = enabled
+        }
+    }
 
     private func updateScrollLinesValue() {
         scrollLinesValue.stringValue = scrollLinesSlider.integerValue == 0 ? "跟随系统" : "\(scrollLinesSlider.integerValue) 行"
@@ -244,7 +286,7 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func saveConfig() {
         window?.makeFirstResponder(nil)
-        let actions = [middleField, backField, forwardField].map(\.stringValue)
+        let actions = [middleField, backField, forwardField, trackpadActionField].map(\.stringValue)
         guard actions.allSatisfy(ShortcutExecutor.isValid) else {
             messageLabel.textColor = .systemRed
             messageLabel.stringValue = "快捷键格式无效，请使用 cmd+r 这样的格式。"
@@ -254,6 +296,11 @@ final class SettingsWindowController: NSWindowController {
         config.middleAction = middleField.stringValue
         config.backAction = backField.stringValue
         config.forwardAction = forwardField.stringValue
+        config.trackpadGestureEnabled = trackpadEnabled.state == .on
+        config.trackpadFingerCount = trackpadFingerPopup.selectedItem?.tag ?? 3
+        config.trackpadAction = trackpadActionField.stringValue
+        config.trackpadTapEnabled = trackpadTapEnabled.state == .on
+        config.trackpadAllowMoreFingers = trackpadAllowMoreFingers.state == .on
         config.reverseVerticalScroll = reverseVertical.state == .on
         config.reverseHorizontalScroll = reverseHorizontal.state == .on
         config.scrollLines = scrollLinesSlider.integerValue

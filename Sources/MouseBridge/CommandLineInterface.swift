@@ -75,6 +75,25 @@ enum CommandLineInterface {
             case "middle": config.middleAction = value
             case "back": config.backAction = value
             case "forward": config.forwardAction = value
+            case "trackpad-action": config.trackpadAction = value
+            case "trackpad-enabled":
+                guard let parsed = parseBool(value) else { return fail("布尔值应为 true/false", code: 2) }
+                config.trackpadGestureEnabled = parsed
+            case "trackpad-tap":
+                guard let parsed = parseBool(value) else { return fail("布尔值应为 true/false", code: 2) }
+                config.trackpadTapEnabled = parsed
+            case "trackpad-allow-more":
+                guard let parsed = parseBool(value) else { return fail("布尔值应为 true/false", code: 2) }
+                config.trackpadAllowMoreFingers = parsed
+            case "trackpad-fingers":
+                guard let parsed = Int(value), (2...5).contains(parsed) else { return fail("trackpad-fingers 应为 2–5", code: 2) }
+                config.trackpadFingerCount = parsed
+            case "trackpad-tap-milliseconds":
+                guard let parsed = Int(value), (50...1_000).contains(parsed) else { return fail("trackpad-tap-milliseconds 应为 50–1000", code: 2) }
+                config.trackpadTapMaxMilliseconds = parsed
+            case "trackpad-tap-movement":
+                guard let parsed = Double(value), (0.001...0.5).contains(parsed) else { return fail("trackpad-tap-movement 应为 0.001–0.5", code: 2) }
+                config.trackpadTapMaxMovement = parsed
             case "reverse-vertical":
                 guard let parsed = parseBool(value) else { return fail("布尔值应为 true/false", code: 2) }
                 config.reverseVerticalScroll = parsed
@@ -90,7 +109,7 @@ enum CommandLineInterface {
             default:
                 return fail("未知配置项：\(key)", code: 2)
             }
-            guard [config.middleAction, config.backAction, config.forwardAction].allSatisfy(ShortcutExecutor.isValid) else {
+            guard [config.middleAction, config.backAction, config.forwardAction, config.trackpadAction].allSatisfy(ShortcutExecutor.isValid) else {
                 return fail("快捷键格式无效", code: 2)
             }
             do {
@@ -124,6 +143,11 @@ enum CommandLineInterface {
           MouseBridge config path
           MouseBridge config get
           MouseBridge config set middle|back|forward <shortcut|none>
+          MouseBridge config set trackpad-action <shortcut|none>
+          MouseBridge config set trackpad-enabled|trackpad-tap|trackpad-allow-more <true|false>
+          MouseBridge config set trackpad-fingers <2-5>
+          MouseBridge config set trackpad-tap-milliseconds <50-1000>
+          MouseBridge config set trackpad-tap-movement <0.001-0.5>
           MouseBridge config set reverse-vertical|reverse-horizontal <true|false>
           MouseBridge config set scroll-lines <0-20>
           MouseBridge config set dpi <400-4000>

@@ -3,9 +3,10 @@
 English | [简体中文](README.zh-CN.md)
 
 MouseBridge is a GPL-3.0-or-later native macOS foundation for mouse button
-mapping, mouse-only wheel control, and Logitech HID++ hardware DPI
-configuration. It was created for people who only need a few mouse features
-and do not want to keep a large vendor suite running in the background.
+mapping, trackpad multi-finger shortcuts, mouse-only wheel control, and
+Logitech HID++ hardware DPI configuration. It was created for people who only
+need a few input features and do not want to keep a large vendor suite running
+in the background.
 
 The project deliberately exposes useful low-level capabilities through a small
 AppKit UI, a versioned JSON file, and a CLI. This makes it practical for users,
@@ -13,6 +14,12 @@ scripts, and coding agents such as Codex to extend without first replacing a
 large framework.
 
 [Download the latest release](https://github.com/gmch1/mousebridge-macos/releases)
+
+## Settings preview
+
+<p align="center">
+  <img src="docs/images/settings-trackpad.png" alt="MouseBridge settings with trackpad multi-finger shortcut controls" width="640">
+</p>
 
 ## Project goals
 
@@ -25,18 +32,24 @@ large framework.
   runtimes.
 
 MouseBridge is not intended to reproduce every feature in Logitech Options+.
-It currently does not manage gestures, per-application profiles, Flow, firmware
-updates, battery reporting, or Logitech cameras and keyboards.
+Beyond its focused multi-finger trackpad binding, it currently does not manage
+gesture sequences, per-application profiles, Flow, firmware updates, battery
+reporting, or Logitech cameras and keyboards.
 
 ## Current features
 
 - Map middle, back, and forward buttons to shortcuts such as `cmd+r`.
 - Disable a button with `none`, or leave it empty to pass it through.
+- Map a 2–5-finger trackpad physical click to any supported shortcut, with an
+  optional short-tap trigger and exact/at-least finger matching.
 - Reverse vertical and horizontal mouse scrolling without changing trackpad
   scrolling.
 - Set a discrete-wheel amount from 0–20 (`0` keeps the macOS default).
 - Query DPI values reported by Logitech HID++ feature `0x2201` and select them
   through a 0–100% slider.
+- Show mouse connection and privacy-permission status, with direct links to the
+  Accessibility and Input Monitoring settings panes.
+- Pause and resume all mappings from the menu bar without quitting the app.
 - Reload JSON configuration after scripts or coding agents edit it.
 - Start at login through `SMAppService`.
 - Write local diagnostics to `~/Library/Logs/MouseBridge.log`.
@@ -61,17 +74,19 @@ DPI. Scroll calculations, configuration validation, shortcut validation, and
 DPI decoding also have automated tests.
 
 The following paths are implemented but have not yet received the same physical
-hardware coverage: horizontal scrolling, middle-button mapping, Logitech Bolt
-receivers, Intel Macs, and other Logitech mouse models. macOS 13 is the minimum
-deployment target, but it has not yet been tested across every macOS release.
-Please open an issue with the product name, connection type, VID/PID, macOS
-version, and diagnostic log when reporting compatibility results.
+hardware coverage: multi-finger trackpad bindings, horizontal scrolling,
+middle-button mapping, Logitech Bolt receivers, Intel Macs, and other Logitech
+mouse models. macOS 13 is the minimum deployment target, but it has not yet
+been tested across every macOS release. Please open an issue with the product
+name, connection type, VID/PID, macOS version, and diagnostic log when reporting
+compatibility results.
 
 ## Permissions
 
 Accessibility permission is required to intercept mouse buttons, modify scroll
-events, and post shortcuts. Input Monitoring is strongly recommended for
-reliable mouse-versus-trackpad classification and was enabled in the tested
+events, and post shortcuts. It is also required for the trackpad binding to post
+its shortcut. Input Monitoring is strongly recommended for reliable
+mouse-versus-trackpad scroll classification and was enabled in the tested
 environment. macOS requires the user to approve privacy permissions manually;
 an application cannot silently grant them to itself.
 
@@ -125,6 +140,9 @@ Configuration is stored at:
 ```bash
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config get
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set back cmd+r
+/Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set trackpad-enabled true
+/Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set trackpad-fingers 3
+/Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set trackpad-action cmd+w
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set scroll-lines 4
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge config set dpi 1200
 /Applications/MouseBridge.app/Contents/MacOS/MouseBridge launch-at-login status
@@ -141,6 +159,10 @@ external changes automatically.
   directory watching.
 - `EventTapController`: button interception, source classification, and wheel
   transformation.
+- `MultitouchController` and `MultitouchGestureRecognizer`: native private-
+  framework device callbacks plus an allocation-free, independently tested
+  gesture state machine. No device callback stays registered while the feature
+  is disabled or MouseBridge is paused.
 - `ScrollTransform`: pure and tested discrete-scroll calculations.
 - `ShortcutExecutor`: compact shortcut parser and Quartz event injection.
 - `HIDPPController`: profile-based IOKit transport, DPI discovery, serialized
@@ -162,6 +184,10 @@ from:
   payload.
 - [Solaar](https://github.com/pwr-Solaar/Solaar) (GPL-2.0-or-later): its HID++
   adjustable-DPI list decoding informed the corresponding MouseBridge logic.
+- [TapBind](https://github.com/gmch1/TapBind), derived from
+  [MiddleClick](https://github.com/artginzburg/MiddleClick) (GPL-3.0): its
+  MultitouchSupport declarations and behavior informed MouseBridge's separately
+  implemented configurable trackpad state machine.
 
 The combined MouseBridge work is distributed under GPL-3.0-or-later. Original
 third-party portions retain their notices and license history. See
@@ -170,11 +196,13 @@ third-party portions retain their notices and license history. See
 ## Compatibility and distribution note
 
 For reliable scroll reversal, MouseBridge dynamically loads the private IOHID
-bridge also documented by Scroll Reverser. It falls back to public Quartz
-fields when those symbols are unavailable. Because private API behavior can
-change between macOS releases, scroll handling needs regression testing on new
-macOS versions. This also makes direct distribution more appropriate than the
-Mac App Store.
+bridge also documented by Scroll Reverser. Multi-finger contact counts use
+Apple's private MultitouchSupport framework. The scroll path falls back to
+public Quartz fields when its private symbols are unavailable; multi-finger
+bindings are unavailable if MultitouchSupport changes incompatibly. Because
+private API behavior can change between macOS releases, both paths need
+regression testing on new macOS versions. This also makes direct distribution
+more appropriate than the Mac App Store.
 
 ## License
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Add configurable 2–5-finger trackpad shortcut mapping for physical clicks
+  and optional taps.
+- Add native MultitouchSupport device handling with an allocation-free frame
+  callback and no active listener while the feature is disabled or paused.
+- Create the AppKit settings window lazily on first use instead of retaining
+  all controls for the entire menu-bar session.
+- Add schema-v3 JSON fields, CLI controls, AppKit settings, and gesture-state
+  tests for the trackpad feature.
+
 ## 0.2.1 — 2026-07-12
 
 - Relicense the combined project under GPL-3.0-or-later.

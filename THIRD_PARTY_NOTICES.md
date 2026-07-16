@@ -34,3 +34,24 @@ work under GPL-3.0-or-later. Apache-2.0 notices remain included as required.
 
 Solaar 允许相关工作使用 GPL 第 2 版或任意更高版本。MouseBridge 选择更高版本条款，将
 组合项目按 GPL-3.0-or-later 分发，并按要求继续保留 Apache-2.0 声明。
+
+## TapBind / MiddleClick
+
+- Projects / 项目：[TapBind](https://github.com/gmch1/TapBind) and
+  [MiddleClick](https://github.com/artginzburg/MiddleClick)
+- Upstream license / 上游许可证：GPL-3.0
+- Copyright Clément Beffa, Alex Galonsky, Carlos E. Hernandez, Pascâl
+  Hartmann, Arthur Ginzburg, guomingchao, and contributors
+- MouseBridge usage / 使用范围：private MultitouchSupport declarations,
+  device callback lifecycle, and multi-finger click/tap behavior；私有
+  MultitouchSupport 声明、设备回调生命周期以及多指按压/轻点行为。
+- MouseBridge uses a separately implemented configurable gesture state machine
+  and an allocation-free callback path；MouseBridge 使用独立重写的可配置手势
+  状态机和零数组分配回调链路。
+
+TapBind and MiddleClick are GPL-3.0 works. MouseBridge distributes the combined
+work under GPL-3.0-or-later; the complete GPL-3.0 text is included as the root
+`LICENSE` and in packaged application resources.
+
+TapBind 与 MiddleClick 使用 GPL-3.0。MouseBridge 将组合项目按 GPL-3.0-or-later
+分发；完整 GPL-3.0 文本位于仓库根目录 `LICENSE`，并会打入应用资源。

@@ -8,10 +8,19 @@ let package = Package(
         .executable(name: "MouseBridge", targets: ["MouseBridge"]),
     ],
     targets: [
+        .systemLibrary(
+            name: "MultitouchSupport",
+            path: "Sources/MultitouchSupport"
+        ),
         .executableTarget(
             name: "MouseBridge",
+            dependencies: ["MultitouchSupport"],
             path: "Sources/MouseBridge",
-            swiftSettings: [.swiftLanguageMode(.v5)]
+            swiftSettings: [.swiftLanguageMode(.v5)],
+            linkerSettings: [
+                .linkedFramework("MultitouchSupport"),
+                .unsafeFlags(["-F/System/Library/PrivateFrameworks"]),
+            ]
         ),
         .testTarget(
             name: "MouseBridgeTests",

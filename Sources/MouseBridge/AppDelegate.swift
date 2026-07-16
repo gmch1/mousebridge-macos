@@ -6,9 +6,10 @@ import ApplicationServices
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
-    private var settingsWindow: SettingsWindowController!
+    private var settingsWindow: SettingsWindowController?
     private let hid = HIDPPController()
     private var eventTap: EventTapController!
+    private let multitouch = MultitouchController.shared
     private var config = AppConfig()
     private var isEnabled = true
     private var connectionItem: NSMenuItem!
@@ -16,19 +17,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var toggleItem: NSMenuItem!
     private var permissionTimer: Timer?
     private var lastLoggedPermissions: (Bool, Bool)?
+    private var hidConnectionState: Bool?
+    private var currentDPICapabilities: HIDPPController.DPICapabilities?
+    private var currentInputStatus: (text: String, ready: Bool)?
+    private var currentPermissionStatus: (accessibility: Bool, inputMonitoring: Bool)?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         DiagnosticLog.shared.resetForLaunch()
         config = ConfigStore.shared.config
         ConfigStore.shared.startWatching()
         DiagnosticLog.shared.write("launch bundle=\(Bundle.main.bundlePath) pid=\(ProcessInfo.processInfo.processIdentifier)")
-        DiagnosticLog.shared.write("config back=\(config.backAction) forward=\(config.forwardAction) middle=\(config.middleAction) reverseV=\(config.reverseVerticalScroll) reverseH=\(config.reverseHorizontalScroll) scrollLines=\(config.scrollLines) dpi=\(config.primaryDPI)")
+        DiagnosticLog.shared.write("config back=\(config.backAction) forward=\(config.forwardAction) middle=\(config.middleAction) reverseV=\(config.reverseVerticalScroll) reverseH=\(config.reverseHorizontalScroll) scrollLines=\(config.scrollLines) dpi=\(config.primaryDPI) trackpadEnabled=\(config.trackpadGestureEnabled) trackpadFingers=\(config.trackpadFingerCount) trackpadAction=\(config.trackpadAction) trackpadTap=\(config.trackpadTapEnabled)")
         buildStatusMenu()
-        settingsWindow = SettingsWindowController()
+
+        multitouch.configure(config: config) { action, trigger in
+            DiagnosticLog.shared.writeEvent("trackpad gesture trigger=\(trigger.rawValue) action=\(action)")
+            ShortcutExecutor.execute(action)
+        }
+        multitouch.setAppEnabled(isEnabled)
+        multitouch.start()
 
         eventTap = EventTapController(
             configProvider: { [weak self] in self?.config ?? AppConfig() },
-            enabledProvider: { [weak self] in self?.isEnabled ?? false }
+            enabledProvider: { [weak self] in self?.isEnabled ?? false },
+            trackpadClickHandler: { [weak self] in self?.multitouch.handlePhysicalClick() ?? false }
         )
         eventTap.onActivity = { [weak self] scrolls, buttons in
             self?.setInputStatus("按键与滚轮：运行中（滚轮 \(scrolls)，按键 \(buttons)）", ready: true)
@@ -38,8 +50,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hid.onConnectionChanged = { [weak self] connected in
             guard let self else { return }
             DiagnosticLog.shared.write("hid connection changed connected=\(connected)")
+            self.hidConnectionState = connected
             self.connectionItem.title = connected ? "M750：已连接" : "M750：未连接"
-            self.settingsWindow.setConnected(connected)
+            self.settingsWindow?.setConnected(connected)
             if connected {
                 self.hid.setDPI(self.config.primaryDPI) { success in
                     if !success { DiagnosticLog.shared.write("initial DPI apply FAILED value=\(self.config.primaryDPI)") }
@@ -47,7 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         hid.onDPICapabilities = { [weak self] capabilities in
-            self?.settingsWindow.setDPICapabilities(capabilities)
+            self?.currentDPICapabilities = capabilities
+            self?.settingsWindow?.setDPICapabilities(capabilities)
         }
         hid.start()
 
@@ -59,11 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self, let updated = notification.object as? AppConfig else { return }
             Task { @MainActor in
                 self.config = updated
-                DiagnosticLog.shared.write("config changed back=\(updated.backAction) forward=\(updated.forwardAction) middle=\(updated.middleAction) reverseV=\(updated.reverseVerticalScroll) reverseH=\(updated.reverseHorizontalScroll) scrollLines=\(updated.scrollLines) dpi=\(updated.primaryDPI)")
+                self.multitouch.updateConfig(updated)
+                DiagnosticLog.shared.write("config changed back=\(updated.backAction) forward=\(updated.forwardAction) middle=\(updated.middleAction) reverseV=\(updated.reverseVerticalScroll) reverseH=\(updated.reverseHorizontalScroll) scrollLines=\(updated.scrollLines) dpi=\(updated.primaryDPI) trackpadEnabled=\(updated.trackpadGestureEnabled) trackpadFingers=\(updated.trackpadFingerCount) trackpadAction=\(updated.trackpadAction) trackpadTap=\(updated.trackpadTapEnabled)")
                 self.hid.setDPI(updated.primaryDPI) { success in
                     if !success { DiagnosticLog.shared.write("apply configured DPI FAILED value=\(updated.primaryDPI)") }
                     DispatchQueue.main.async { [weak self] in
-                        self?.settingsWindow.setDPIApplyResult(success, value: updated.primaryDPI)
+                        self?.settingsWindow?.setDPIApplyResult(success, value: updated.primaryDPI)
                     }
                 }
             }
@@ -74,6 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ConfigStore.shared.stopWatching()
         permissionTimer?.invalidate()
         eventTap?.stop()
+        multitouch.stop()
         hid.stop()
     }
 
@@ -84,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DiagnosticLog.shared.write("permissions accessibility=\(accessibilityGranted) inputMonitoring=\(inputMonitoringGranted)")
             lastLoggedPermissions = (accessibilityGranted, inputMonitoringGranted)
         }
+        currentPermissionStatus = (accessibilityGranted, inputMonitoringGranted)
         settingsWindow?.setPermissionStatus(
             accessibilityGranted: accessibilityGranted,
             inputMonitoringGranted: inputMonitoringGranted
@@ -146,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setInputStatus(_ text: String, ready: Bool) {
+        currentInputStatus = (text, ready)
         inputStatusItem.title = text
         settingsWindow?.setInputStatus(text, ready: ready)
     }
@@ -174,12 +192,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openSettings() {
-        settingsWindow.showWindow(nil)
+        if settingsWindow == nil {
+            let controller = SettingsWindowController()
+            if let hidConnectionState { controller.setConnected(hidConnectionState) }
+            if let currentDPICapabilities { controller.setDPICapabilities(currentDPICapabilities) }
+            if let currentInputStatus {
+                controller.setInputStatus(currentInputStatus.text, ready: currentInputStatus.ready)
+            }
+            if let currentPermissionStatus {
+                controller.setPermissionStatus(
+                    accessibilityGranted: currentPermissionStatus.accessibility,
+                    inputMonitoringGranted: currentPermissionStatus.inputMonitoring
+                )
+            }
+            settingsWindow = controller
+        }
+        settingsWindow?.showWindow(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func toggleEnabled() {
         isEnabled.toggle()
+        multitouch.setAppEnabled(isEnabled)
         toggleItem.title = isEnabled ? "暂停映射" : "恢复映射"
     }
 
